@@ -1,0 +1,10 @@
+[project]
+name = "metaodi-mcp-server"
+version = "0.1.0"
+description = "Metaodi's MCP server for my tools (OpenERZ, tecdottir)"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "httpx>=0.28.1",
+    "mcp[cli]>=1.26.0",
+]
