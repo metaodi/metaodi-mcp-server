@@ -19,5 +19,5 @@ uv run mcp run openerz.py
 MCP Inspector:
 
 ```
-npx -y @modelcontextprotocol/inspector
+npx -y @modelcontextprotocol/inspector uv run mcp run openerz.py
 ```

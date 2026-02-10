@@ -31,35 +31,38 @@ def format_calendar_entry(entry: dict) -> str:
     """Format an OpenERZ calendar entry into a readable string."""
     return f"""
 Date: {entry.get("date", "Unknown")}
-Waste Type {entry.get("waste_type", "Unknown")}
+Waste Type: {entry.get("waste_type", "Unknown")}
 Region: {entry.get("region", "Unknown")}
 Area: {entry.get("area", "Unknown")}
 Description: {entry.get("description", "No description available")}
 """
 
-
-@mcp.tool()
-async def get_next_waste_collection(region: str) -> str:
-    """Get next waste collection for a region.
+async def get_waste_collection_data(region: str, waste_type: str | None = None) -> str:
+    """Get next waste collection for a region and waste type.
 
     Args:
         region: The region to get waste collection information for
+        waste_type: The type of waste to get collection information for
     """
     # Validate region against server-provided list (if available)
-    regions_url = f"{OPENERZ_API}/regions"
+    regions_url = f"{OPENERZ_API}/parameter/regions"
     regions_data = await make_request(regions_url)
 
     if region not in regions_data.get("result", []):
         return f"Region '{region}' is not valid. Use the 'list_waste_regions' tool to see valid values."
 
     # Try to fetch calendar entries for the region
-    calendar_url = f"{OPENERZ_API}/calendar/area/{region}"
+    calendar_url = f"{OPENERZ_API}/calendar"
+
     calendar_params = {
         "limit": 10,
         "region": region,
         "sort": "date",
         "start": datetime.datetime.now().date().isoformat(),
-    }  # Limit to next 10 entries
+    }
+    if waste_type:
+        calendar_params["types"] = waste_type
+    
     data = await make_request(calendar_url, calendar_params)
 
     if not data:
@@ -74,6 +77,33 @@ async def get_next_waste_collection(region: str) -> str:
     formatted = [format_calendar_entry(e) for e in entries[:10]]
     return "\n---\n".join(formatted)
 
+@mcp.tool()
+async def get_next_waste_collection(region: str) -> str:
+    """Get next waste collection for a region.
+
+    Args:
+        region: The region to get waste collection information for
+    """
+    return await get_waste_collection_data(region, waste_type=None)
+
+
+@mcp.tool()
+async def get_next_paper_collection(region: str) -> str:
+    """Get next paper waste collection for a region.
+
+    Args:
+        region: The region to get paper waste collection information for
+    """
+    return await get_waste_collection_data(region, waste_type="paper")
+
+@mcp.tool()
+async def get_next_cardboard_collection(region: str) -> str:
+    """Get next cardboard waste collection for a region.
+
+    Args:
+        region: The region to get cardboard waste collection information for
+    """
+    return await get_waste_collection_data(region, waste_type="cardboard")
 
 @mcp.tool()
 async def list_waste_regions() -> str:
@@ -82,7 +112,7 @@ async def list_waste_regions() -> str:
     This tool queries the API and returns a human-readable list of region ids/names
     so callers can provide a valid `region` value to `get_next_waste_collection`.
     """
-    url = f"{OPENERZ_API}/regions"
+    url = f"{OPENERZ_API}/parameter/regions"
     data = await make_request(url)
     if not data:
         return "Unable to fetch regions from OpenERZ API."
