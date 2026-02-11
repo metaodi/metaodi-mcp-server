@@ -37,7 +37,7 @@ Area: {entry.get("area", "Unknown")}
 Description: {entry.get("description", "No description available")}
 """
 
-async def get_waste_collection_data(region: str, waste_type: str | None = None) -> str:
+async def get_waste_collection_data(region: str, waste_type: str | None = None, area: str | None = None) -> str:
     """Get next waste collection for a region and waste type.
 
     Args:
@@ -62,6 +62,8 @@ async def get_waste_collection_data(region: str, waste_type: str | None = None) 
     }
     if waste_type:
         calendar_params["types"] = waste_type
+    if area:
+        calendar_params["area"] = area
     
     data = await make_request(calendar_url, calendar_params)
 
@@ -73,35 +75,41 @@ async def get_waste_collection_data(region: str, waste_type: str | None = None) 
 
     if not entries:
         return "No upcoming waste collection entries found for this region."
+    
+    areas = set(e.get("area") for e in entries if e.get("area"))
+    if len(areas) > 1 and not area:
+        return f"Multiple areas found for region '{region}'. Please specify an area using the 'area' parameter. Use the 'list_waste_areas' tool to see valid values."
 
     formatted = [format_calendar_entry(e) for e in entries[:10]]
     return "\n---\n".join(formatted)
 
 @mcp.tool()
-async def get_next_waste_collection(region: str) -> str:
+async def get_next_waste_collection(region: str, area: str | None = None) -> str:
     """Get next waste collection for a region.
 
     Args:
         region: The region to get waste collection information for
     """
-    return await get_waste_collection_data(region, waste_type=None)
+    return await get_waste_collection_data(region, waste_type=None, area=area)
 
 
 @mcp.tool()
-async def get_next_paper_collection(region: str) -> str:
+async def get_next_paper_collection(region: str, area: str | None = None) -> str:
     """Get next paper waste collection for a region.
 
     Args:
         region: The region to get paper waste collection information for
+        area: The area within the region to get paper waste collection information for
     """
-    return await get_waste_collection_data(region, waste_type="paper")
+    return await get_waste_collection_data(region, waste_type="paper", area=area)
 
 @mcp.tool()
-async def get_next_cardboard_collection(region: str) -> str:
+async def get_next_cardboard_collection(region: str, area: str | None = None) -> str:
     """Get next cardboard waste collection for a region.
 
     Args:
         region: The region to get cardboard waste collection information for
+        area: The area within the region to get cardboard waste collection information for
     """
     return await get_waste_collection_data(region, waste_type="cardboard")
 
@@ -119,6 +127,23 @@ async def list_waste_regions() -> str:
 
     regions = data["result"]
     return "\n".join(regions)
+
+
+@mcp.tool()
+async def list_waste_areas(region: str) -> str:
+    """List valid areas identifiers for a certain region from the OpenERZ API.
+
+    This tool queries the API and returns a human-readable list of area names
+    so callers can provide a valid `area` value to `get_next_waste_collection`.
+    """
+    url = f"{OPENERZ_API}/parameter/areas"
+    params = {"region": region}
+    data = await make_request(url, params=params)
+    if not data:
+        return f"Unable to fetch areas for region {region} from OpenERZ API."
+
+    areas = list(e.get("area") for e in data["result"] if e.get("area"))
+    return "\n".join(sorted(areas))
 
 
 def main():
