@@ -84,6 +84,24 @@ async def get_waste_collection_data(region: str, waste_type: str | None = None, 
     return "\n---\n".join(formatted)
 
 @mcp.tool()
+async def get_next_waste_collection_for_type(waste_type: str, region: str, area: str | None = None) -> str:
+    """Get next waste collection for a region for a specific waste type.
+
+    Args:
+        waste_type: The type of waste to get collection information for (e.g., "paper", "cardboard")
+        region: The region to get waste collection information for
+        area: The area within the region to get waste collection information for
+    """
+    # Validate waste type against server-provided list (if available)
+    types_url = f"{OPENERZ_API}/parameter/types"
+    types_params = {"region": region}
+    types_data = await make_request(types_url, params=types_params)
+
+    if not types_data or waste_type not in types_data.get("result", []):
+        return f"Waste type '{waste_type}' is not valid for region '{region}'. Use the 'list_waste_types' tool to see valid values."
+    return await get_waste_collection_data(region, waste_type=waste_type, area=area)
+
+@mcp.tool()
 async def get_next_waste_collection(region: str, area: str | None = None) -> str:
     """Get next waste collection for a region.
 
@@ -144,6 +162,23 @@ async def list_waste_areas(region: str) -> str:
 
     areas = list(e.get("area") for e in data["result"] if e.get("area"))
     return "\n".join(sorted(areas))
+
+@mcp.tool()
+async def list_waste_types(region: str) -> str:
+    """List valid waste types for a certain region from the OpenERZ API.
+
+    This tool queries the API and returns a human-readable list of waste type names
+    so callers can provide a valid `waste_type` value to `get_next_waste_collection_for_type`.
+    """
+    url = f"{OPENERZ_API}/parameter/types"
+    params = {"region": region}
+    data = await make_request(url, params=params)
+    if not data:
+        return f"Unable to fetch waste types for region {region} from OpenERZ API."
+
+    waste_types = data["result"]
+    return "\n".join(waste_types)
+
 
 
 def main():
