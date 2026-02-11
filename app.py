@@ -78,7 +78,7 @@ async def get_waste_collection_data(region: str, waste_type: str | None = None, 
     
     areas = set(e.get("area") for e in entries if e.get("area"))
     if len(areas) > 1 and not area:
-        return f"Multiple areas found for region '{region}'. Please specify an area using the 'area' parameter. Use the 'list_waste_areas' tool to see valid values."
+        return f"Multiple areas ({', '.join(areas)}) found for region '{region}'. Please specify an area using the 'area' parameter. Use the 'list_waste_areas' tool to see valid values."
 
     formatted = [format_calendar_entry(e) for e in entries[:10]]
     return "\n---\n".join(formatted)
