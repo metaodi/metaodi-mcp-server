@@ -148,7 +148,7 @@ async def list_waste_areas(region: str) -> str:
 
 def main():
     # Initialize and run the server
-    mcp.run(transport="stdio")
+    mcp.run(transport="streamable-http")
 
 
 if __name__ == "__main__":
