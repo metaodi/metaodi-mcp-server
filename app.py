@@ -111,7 +111,7 @@ async def get_next_cardboard_collection(region: str, area: str | None = None) ->
         region: The region to get cardboard waste collection information for
         area: The area within the region to get cardboard waste collection information for
     """
-    return await get_waste_collection_data(region, waste_type="cardboard")
+    return await get_waste_collection_data(region, waste_type="cardboard", area=area)
 
 @mcp.tool()
 async def list_waste_regions() -> str:
