@@ -5,7 +5,7 @@ import datetime
 from mcp.server.fastmcp import FastMCP
 
 # Initialize FastMCP server
-mcp = FastMCP("openerz")
+mcp = FastMCP("openerz", host="0.0.0.0", port=8000)
 
 # Constants
 OPENERZ_API = "https://openerz.metaodi.ch/api"
