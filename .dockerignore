@@ -1,0 +1,13 @@
+# flyctl launch added from .gitignore
+**\__pycache__
+**\.mypy_cache
+**\*.pyc
+**\.venv
+
+# flyctl launch added from .mypy_cache\.gitignore
+# Automatically created by mypy
+.mypy_cache\**\*
+
+# flyctl launch added from .venv\.gitignore
+.venv\**\*
+fly.toml
