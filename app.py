@@ -165,29 +165,36 @@ async def list_waste_types(region: str) -> str:
 
 def format_measurement(measurement: dict) -> str:
     """Format a tecdottir measurement entry into a readable string."""
-    timestamp = measurement.get('timestamp_cet', {})
-    temp_air = measurement.get('air_temperature', {})
-    temp_water = measurement.get('water_temperature', {})
-    humidity = measurement.get('humidity_percent', {})
-    pressure = measurement.get('barometric_pressure_qfe', {})
-    wind_speed = measurement.get('wind_speed_avg_10min', {})
-    wind_direction = measurement.get('wind_direction', {})
-    wind_gust = measurement.get('wind_gust_10min', {})
-    wind_chill = measurement.get('windchill', {})
-    water_level = measurement.get('water_level', {})
-    precipitation = measurement.get('precipitation', {})
+    def safe_value(val, unit=""):
+        v = val.get('value', 'Unknown') if isinstance(val, dict) else 'Unknown'
+        if v is None or v == 'None':
+            v = 'Unknown'
+        u = val.get('unit', '') if isinstance(val, dict) else ''
+        return f"{v} {u}".strip() if unit == "" else f"{v}{unit}"
+
+    timestamp = measurement.get('timestamp_cet', {"value": "Unknown", "unit": ""})
+    temp_air = measurement.get('air_temperature', {"value": "Unknown", "unit": ""})
+    temp_water = measurement.get('water_temperature', {"value": "Unknown", "unit": ""})
+    humidity = measurement.get('humidity_percent', {"value": "Unknown", "unit": ""})
+    pressure = measurement.get('barometric_pressure_qfe', {"value": "Unknown", "unit": ""})
+    wind_speed = measurement.get('wind_speed_avg_10min', {"value": "Unknown", "unit": ""})
+    wind_direction = measurement.get('wind_direction', {"value": "Unknown", "unit": ""})
+    wind_gust = measurement.get('wind_gust_10min', {"value": "Unknown", "unit": ""})
+    wind_chill = measurement.get('windchill', {"value": "Unknown", "unit": ""})
+    water_level = measurement.get('water_level', {"value": "Unknown", "unit": ""})
+    precipitation = measurement.get('precipitation', {"value": "Unknown", "unit": ""})
     return f"""
-Timestamp: {timestamp.get('value', 'Unknown')}
-Temperature (Air): {temp_air.get('value', 'Unknown')} {temp_air.get('unit', '')}
-Temperature (Water, Lake of Zurich): {temp_water.get('value', 'Unknown')} {temp_water.get('unit', '')}
-Humidity: {humidity.get('value', 'Unknown')} {humidity.get('unit', '')}
-Pressure: {pressure.get('value', 'Unknown')} {pressure.get('unit', '')}
-Wind Speed: {wind_speed.get('value', 'Unknown')} {wind_speed.get('unit', '')}
-Wind Direction: {wind_direction.get('value', 'Unknown')} {wind_direction.get('unit', '')}
-Wind Gust: {wind_gust.get('value', 'Unknown')} {wind_gust.get('unit', '')}
-Windchill: {wind_chill.get('value', 'Unknown')} {wind_chill.get('unit', '')}
-Water Level: {water_level.get('value', 'Unknown')} {water_level.get('unit', '')}
-Precipitation: {precipitation.get('value', 'Unknown')} {precipitation.get('unit', '')}
+Timestamp: {safe_value(timestamp)}
+Temperature (Air): {safe_value(temp_air)}
+Temperature (Water, Lake of Zurich): {safe_value(temp_water)}
+Humidity: {safe_value(humidity)}
+Pressure: {safe_value(pressure)}
+Wind Speed: {safe_value(wind_speed)}
+Wind Direction: {safe_value(wind_direction)}
+Wind Gust: {safe_value(wind_gust)}
+Windchill: {safe_value(wind_chill)}
+Water Level: {safe_value(water_level)}
+Precipitation: {safe_value(precipitation)}
 """
 
 
