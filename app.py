@@ -33,9 +33,6 @@ def format_calendar_entry(entry: dict) -> str:
     return f"""
 Date: {entry.get("date", "Unknown")}
 Waste Type: {entry.get("waste_type", "Unknown")}
-Region: {entry.get("region", "Unknown")}
-Area: {entry.get("area", "Unknown")}
-Description: {entry.get("description", "No description available")}
 """
 
 async def get_waste_collection_data(region: str, waste_type: str | None = None, area: str | None = None) -> str:
