@@ -245,5 +245,25 @@ def main():
     mcp.run(transport="streamable-http")
 
 
+# Resource: List all available tools
+@mcp.resource("tools://available-tools")
+def get_available_tools() -> str:
+    """Returns documentation of all available tools grouped by category."""
+    return """
+# Available Tools
+
+## OpenERZ (Waste Collection)
+- get_next_waste_collection(region, area?) — Get next waste collection schedule
+- get_next_waste_collection_for_type(waste_type, region, area?) — Get collection for specific waste type
+- list_waste_regions() — List available regions
+- list_waste_areas(region) — List areas for a region
+- list_waste_types(region) — List waste types for a region
+
+## Tecdottir (Weather)
+- list_weather_stations() — List available weather stations in Zurich area
+- get_weather_measurements(station, start_date?, end_date?, limit?) — Get weather data
+"""
+
+
 if __name__ == "__main__":
     main()
