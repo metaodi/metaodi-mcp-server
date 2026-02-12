@@ -151,7 +151,7 @@ async def list_waste_regions() -> str:
 async def list_waste_areas(region: str) -> str:
     """List valid areas identifiers for a certain region from the OpenERZ API.
 
-    This tool queries the API and returns a human-readable list of area names
+    This tool queries the API and returns a human-readable list of area names or zip codes (depending on the region)
     so callers can provide a valid `area` value to `get_next_waste_collection`.
     """
     url = f"{OPENERZ_API}/parameter/areas"
