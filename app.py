@@ -5,10 +5,11 @@ import datetime
 from mcp.server.fastmcp import FastMCP
 
 # Initialize FastMCP server
-mcp = FastMCP("openerz", host="0.0.0.0", port=8000)
+mcp = FastMCP("metaodi-tools", host="0.0.0.0", port=8000)
 
 # Constants
 OPENERZ_API = "https://openerz.metaodi.ch/api"
+TECDOTTIR_API = "https://tecdottir.metaodi.ch"
 USER_AGENT = "metaodi-mcp-app/1.0"
 
 
@@ -112,26 +113,6 @@ async def get_next_waste_collection(region: str, area: str | None = None) -> str
 
 
 @mcp.tool()
-async def get_next_paper_collection(region: str, area: str | None = None) -> str:
-    """Get next paper waste collection for a region.
-
-    Args:
-        region: The region to get paper waste collection information for
-        area: The area within the region to get paper waste collection information for
-    """
-    return await get_waste_collection_data(region, waste_type="paper", area=area)
-
-@mcp.tool()
-async def get_next_cardboard_collection(region: str, area: str | None = None) -> str:
-    """Get next cardboard waste collection for a region.
-
-    Args:
-        region: The region to get cardboard waste collection information for
-        area: The area within the region to get cardboard waste collection information for
-    """
-    return await get_waste_collection_data(region, waste_type="cardboard", area=area)
-
-@mcp.tool()
 async def list_waste_regions() -> str:
     """List valid region identifiers from the OpenERZ API.
 
@@ -179,6 +160,84 @@ async def list_waste_types(region: str) -> str:
     waste_types = data["result"]
     return "\n".join(waste_types)
 
+
+# Tecdottir (Weather) Tools
+
+def format_measurement(measurement: dict) -> str:
+    """Format a tecdottir measurement entry into a readable string."""
+    timestamp = measurement.get('timestamp_cet', {})
+    temp_air = measurement.get('air_temperature', {})
+    temp_water = measurement.get('water_temperature', {})
+    humidity = measurement.get('humidity_percent', {})
+    pressure = measurement.get('barometric_pressure_qfe', {})
+    wind_speed = measurement.get('wind_speed_avg_10min', {})
+    wind_direction = measurement.get('wind_direction', {})
+    wind_gust = measurement.get('wind_gust_10min', {})
+    wind_chill = measurement.get('windchill', {})
+    water_level = measurement.get('water_level', {})
+    precipitation = measurement.get('precipitation', {})
+    return f"""
+Timestamp: {timestamp.get('value', 'Unknown')}
+Temperature (Air): {temp_air.get('value', 'Unknown')} {temp_air.get('unit', '')}
+Temperature (Water, Lake of Zurich): {temp_water.get('value', 'Unknown')} {temp_water.get('unit', '')}
+Humidity: {humidity.get('value', 'Unknown')} {humidity.get('unit', '')}
+Pressure: {pressure.get('value', 'Unknown')} {pressure.get('unit', '')}
+Wind Speed: {wind_speed.get('value', 'Unknown')} {wind_speed.get('unit', '')}
+Wind Direction: {wind_direction.get('value', 'Unknown')} {wind_direction.get('unit', '')}
+Wind Gust: {wind_gust.get('value', 'Unknown')} {wind_gust.get('unit', '')}
+Windchill: {wind_chill.get('value', 'Unknown')} {wind_chill.get('unit', '')}
+Water Level: {water_level.get('value', 'Unknown')} {water_level.get('unit', '')}
+Precipitation: {precipitation.get('value', 'Unknown')} {precipitation.get('unit', '')}
+"""
+
+
+@mcp.tool()
+async def list_weather_stations() -> str:
+    """List all available weather stations from Tecdottir.
+
+    This tool queries the Tecdottir weather API and returns available station identifiers.
+    """
+    url = f"{TECDOTTIR_API}/stations"
+    data = await make_request(url)
+    if not data:
+        return "Unable to fetch weather stations from Tecdottir API."
+
+    stations = data.get("result", {})
+    if not stations:
+        return "No weather stations available."
+    
+    station_list = [f"- {s.get('title', s.get('slug', 'Unknown'))} (id: {s.get('slug', 'Unknown')})" for s in stations]
+    return "\n".join(station_list)
+
+
+@mcp.tool()
+async def get_weather_measurements(station: str, start_date: str | None = None, end_date: str | None = None, limit: int = 10) -> str:
+    """Get weather measurements for a specific station from Tecdottir.
+
+    Args:
+        station: The station identifier to get measurements for (e.g., "tiefenbrunnen")
+        start_date: Optional start date in format YYYY-MM-DD
+        end_date: Optional end date in format YYYY-MM-DD
+        limit: Maximum number of measurements to return (default: 10, max: 1000)
+    """
+    url = f"{TECDOTTIR_API}/measurements/{station}"
+    params = {"limit": min(limit, 1000)}
+    
+    if start_date:
+        params["startDate"] = start_date
+    if end_date:
+        params["endDate"] = end_date
+    
+    data = await make_request(url, params=params)
+    if not data:
+        return f"Unable to fetch measurements for station '{station}' from Tecdottir API."
+
+    measurements = data.get("result", [])
+    if not measurements:
+        return f"No measurements found for station '{station}' with the given criteria."
+    
+    formatted = [format_measurement(m) for m in measurements["values"]]
+    return "\n".join(formatted)
 
 
 def main():
