@@ -167,10 +167,10 @@ def format_measurement(measurement: dict) -> str:
     """Format a tecdottir measurement entry into a readable string."""
     def safe_value(val, unit=""):
         v = val.get('value', 'Unknown') if isinstance(val, dict) else 'Unknown'
-        if v is None or v == 'None':
-            v = 'Unknown'
+        if v is None or v == 'None' or v == 'Unknown':
+            return 'Unknown'
         u = val.get('unit', '') if isinstance(val, dict) else ''
-        return f"{v} {u}".strip() if unit == "" else f"{v}{unit}"
+        return f"{v} {u}".strip()
 
     timestamp = measurement.get('timestamp_cet', {"value": "Unknown", "unit": ""})
     temp_air = measurement.get('air_temperature', {"value": "Unknown", "unit": ""})
