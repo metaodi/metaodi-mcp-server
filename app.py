@@ -236,7 +236,7 @@ async def get_weather_measurements(station: str, start_date: str | None = None, 
     if not measurements:
         return f"No measurements found for station '{station}' with the given criteria."
     
-    formatted = [format_measurement(m) for m in measurements["values"]]
+    formatted = [format_measurement(m["values"]) for m in measurements]
     return "\n".join(formatted)
 
 
