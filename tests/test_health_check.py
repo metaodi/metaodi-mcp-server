@@ -19,7 +19,7 @@ import httpx
 import pytest
 
 # Get server URL from environment variable or use default
-SERVER_URL = os.getenv("MCP_SERVER_URL", "https://metaodi-mcp-server.fly.dev")
+SERVER_URL = os.getenv("MCP_SERVER_URL", "https://mcp.metaodi.ch")
 # Timeout for requests (longer to account for server wake-up)
 REQUEST_TIMEOUT = 60.0
 

@@ -45,7 +45,7 @@ The test suite now includes a test that validates the MCP endpoint functionality
 For interactive MCP protocol testing, you can also use the **MCP Inspector** tool:
 
 ```bash
-npx -y @modelcontextprotocol/inspector https://metaodi-mcp-server.fly.dev
+npx -y @modelcontextprotocol/inspector https://mcp.metaodi.ch
 ```
 
 ## GitHub Action
