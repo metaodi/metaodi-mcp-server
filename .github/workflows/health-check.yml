@@ -50,7 +50,7 @@ jobs:
         env:
           MCP_SERVER_URL: https://metaodi-mcp-server.fly.dev
         run: |
-          pytest tests/test_health_check.py -v --tb=short
+          uv run pytest tests/test_health_check.py -v --tb=short
       
       - name: Report results
         if: always()
