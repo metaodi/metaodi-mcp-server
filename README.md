@@ -35,3 +35,25 @@ MCP Inspector:
 ```
 npx -y @modelcontextprotocol/inspector uv run mcp run openerz.py
 ```
+
+## Health Check
+
+The deployed server on Fly.io has automated health checks that run:
+- After every deployment
+- Every 6 hours on a schedule
+- Manually via GitHub Actions
+
+To run health checks locally:
+
+```bash
+# Install test dependencies
+pip install -e ".[test]"
+
+# Run tests against deployed server
+pytest tests/test_health_check.py -v
+
+# Run against local server
+MCP_SERVER_URL=http://localhost:8000 pytest tests/test_health_check.py -v
+```
+
+See `tests/README.md` for more information.

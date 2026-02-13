@@ -1,0 +1,63 @@
+name: Health Check
+
+on:
+  # Run after deployment
+  workflow_run:
+    workflows: ["Fly Deploy"]
+    types:
+      - completed
+  # Allow manual trigger
+  workflow_dispatch:
+  # Run on schedule (every 6 hours)
+  schedule:
+    - cron: '0 */6 * * *'
+
+jobs:
+  health-check:
+    name: Check MCP Server Health
+    runs-on: ubuntu-latest
+    # Only run if deployment was successful or if manually triggered
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' }}
+    
+    permissions:
+      contents: read
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      
+      - name: Install dependencies
+        run: |
+          uv sync --extra test
+      
+      - name: Wait for deployment to be ready
+        run: |
+          echo "Waiting 30 seconds for deployment to be fully ready..."
+          sleep 30
+      
+      - name: Run health check tests
+        id: health_check
+        env:
+          MCP_SERVER_URL: https://metaodi-mcp-server.fly.dev
+        run: |
+          pytest tests/test_health_check.py -v --tb=short
+      
+      - name: Report results
+        if: always()
+        run: |
+          if [ "${{ steps.health_check.outcome }}" == "success" ]; then
+            echo "✅ Health check passed - MCP server is healthy"
+          else
+            echo "❌ Health check failed - MCP server may have issues"
+            exit 1
+          fi
