@@ -43,6 +43,7 @@ jobs:
           sleep 30
       
       - name: Run health check tests
+        id: health_check
         env:
           MCP_SERVER_URL: https://metaodi-mcp-server.fly.dev
         run: |
@@ -51,7 +52,7 @@ jobs:
       - name: Report results
         if: always()
         run: |
-          if [ $? -eq 0 ]; then
+          if [ ${{ steps.health_check.outcome }} == 'success' ]; then
             echo "✅ Health check passed - MCP server is healthy"
           else
             echo "❌ Health check failed - MCP server may have issues"
