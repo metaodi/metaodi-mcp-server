@@ -52,7 +52,7 @@ jobs:
       - name: Report results
         if: always()
         run: |
-          if [ ${{ steps.health_check.outcome }} == 'success' ]; then
+          if [ "${{ steps.health_check.outcome }}" == "success" ]; then
             echo "✅ Health check passed - MCP server is healthy"
           else
             echo "❌ Health check failed - MCP server may have issues"
