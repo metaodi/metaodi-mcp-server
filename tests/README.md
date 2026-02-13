@@ -7,9 +7,11 @@ This directory contains health check tests for the deployed MCP server on Fly.io
 ### Install Dependencies
 
 ```bash
+# Using uv (recommended)
+uv sync --extra test
+
+# Or using pip
 pip install -e ".[test]"
-# or with uv:
-uv pip install -e ".[test]"
 ```
 
 ### Run Tests
@@ -27,22 +29,24 @@ MCP_SERVER_URL=http://localhost:8000 pytest tests/test_health_check.py -v
 
 ## What is Tested
 
-The health check tests focus on basic server availability and connectivity:
+The health check tests validate:
 
 1. **test_server_is_responding**: Tests if the server is reachable and responding to HTTP requests
 2. **test_server_basic_health**: Performs a basic health check to ensure the server process is running
+3. **test_mcp_endpoint_list_tools**: Tests the MCP endpoint at `/mcp` and lists all available tools
 
-## Note on MCP Protocol Testing
+## MCP Endpoint Testing
 
-These tests verify that the server is alive and responding, but do not test the full MCP protocol functionality (listing tools, resources, etc.). 
+The test suite now includes a test that validates the MCP endpoint functionality by:
+- Initializing an MCP session using the JSON-RPC protocol
+- Listing all available tools from the server
+- Verifying that expected tools are present
 
-For detailed MCP protocol testing, use the **MCP Inspector** tool:
+For interactive MCP protocol testing, you can also use the **MCP Inspector** tool:
 
 ```bash
 npx -y @modelcontextprotocol/inspector https://metaodi-mcp-server.fly.dev
 ```
-
-The MCP server uses the `streamable-http` transport which requires the MCP SDK for full protocol interaction. Simple HTTP requests cannot test tools and resources functionality.
 
 ## GitHub Action
 

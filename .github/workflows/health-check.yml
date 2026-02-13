@@ -38,7 +38,7 @@ jobs:
       
       - name: Install dependencies
         run: |
-          uv pip install --system -e ".[test]"
+          uv sync --extra test
       
       - name: Wait for deployment to be ready
         run: |

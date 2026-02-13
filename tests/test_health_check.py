@@ -106,13 +106,135 @@ async def test_server_basic_health():
             pytest.fail(f"Health check failed: {e}")
 
 
-# NOTE: For detailed MCP protocol testing (listing tools, resources, etc.),
-# use the MCP Inspector tool or the MCP client SDK:
-#   npx -y @modelcontextprotocol/inspector <server-url>
-#
-# The streamable-http transport used by this server requires the MCP SDK
-# to properly interact with tools and resources. Simple HTTP requests
-# cannot test the full MCP protocol functionality.
-#
-# This health check focuses on basic server availability and connectivity,
-# which is sufficient for monitoring deployment health.
+@pytest.mark.asyncio
+async def test_mcp_endpoint_list_tools():
+    """Test that the MCP endpoint can list all available tools.
+    
+    The MCP server runs on the /mcp endpoint and uses Server-Sent Events (SSE).
+    This test validates that the server can list all available tools.
+    """
+    async with httpx.AsyncClient(timeout=REQUEST_TIMEOUT) as client:
+        headers = {
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+        }
+        
+        # Step 1: Initialize the MCP session
+        init_request = {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "initialize",
+            "params": {
+                "protocolVersion": "2024-11-05",
+                "capabilities": {},
+                "clientInfo": {
+                    "name": "health-check-test",
+                    "version": "1.0.0"
+                }
+            }
+        }
+        
+        try:
+            # Initialize session
+            response = await client.post(
+                f"{SERVER_URL}/mcp",
+                json=init_request,
+                headers=headers
+            )
+            
+            assert response.status_code == 200, (
+                f"MCP initialize endpoint returned status {response.status_code}"
+            )
+            
+            # Get session ID from response headers
+            session_id = response.headers.get("mcp-session-id")
+            assert session_id, "No mcp-session-id header in initialize response"
+            
+            # Parse SSE response
+            response_text = response.text
+            assert "event: message" in response_text, "Expected SSE format in response"
+            
+            # Extract the data from SSE format
+            data_line = [line for line in response_text.split('\n') if line.startswith('data: ')][0]
+            data_json = data_line.replace('data: ', '')
+            import json
+            init_data = json.loads(data_json)
+            
+            assert "result" in init_data, "Initialize response missing 'result'"
+            result = init_data["result"]
+            assert "serverInfo" in result, "Initialize response missing 'serverInfo'"
+            server_info = result["serverInfo"]
+            
+            print(f"\n✅ MCP session initialized")
+            print(f"✅ Server name: {server_info.get('name')}")
+            print(f"✅ Server version: {server_info.get('version')}")
+            print(f"✅ Session ID: {session_id}")
+            
+            # Step 2: List tools using the session ID
+            tools_request = {
+                "jsonrpc": "2.0",
+                "id": 2,
+                "method": "tools/list",
+                "params": {}
+            }
+            
+            # Add session ID to headers
+            headers_with_session = headers.copy()
+            headers_with_session["mcp-session-id"] = session_id
+            
+            response = await client.post(
+                f"{SERVER_URL}/mcp",
+                json=tools_request,
+                headers=headers_with_session
+            )
+            
+            assert response.status_code == 200, (
+                f"MCP tools/list endpoint returned status {response.status_code}"
+            )
+            
+            # Parse SSE response
+            response_text = response.text
+            data_line = [line for line in response_text.split('\n') if line.startswith('data: ')][0]
+            data_json = data_line.replace('data: ', '')
+            tools_data = json.loads(data_json)
+            
+            assert "result" in tools_data, "tools/list response missing 'result'"
+            result = tools_data["result"]
+            assert "tools" in result, "Response missing 'tools' field"
+            tools = result["tools"]
+            assert isinstance(tools, list), "Tools should be a list"
+            assert len(tools) > 0, "No tools available"
+            
+            # Verify expected tools are present
+            tool_names = [tool.get("name") for tool in tools]
+            expected_tools = [
+                "get_next_waste_collection",
+                "get_next_waste_collection_for_type",
+                "list_waste_regions",
+                "list_waste_areas",
+                "list_waste_types",
+                "list_weather_stations",
+                "get_weather_measurements",
+            ]
+            
+            for expected_tool in expected_tools:
+                assert expected_tool in tool_names, (
+                    f"Expected tool '{expected_tool}' not found in available tools"
+                )
+            
+            print(f"\n✅ Found {len(tools)} tools")
+            print("✅ Available tools:")
+            for tool in tools:
+                tool_name = tool.get("name")
+                tool_desc = tool.get("description", "No description")
+                print(f"   - {tool_name}: {tool_desc[:80]}")
+            
+        except httpx.ConnectError as e:
+            pytest.fail(
+                f"Failed to connect to MCP endpoint at {SERVER_URL}/mcp. "
+                f"Error: {e}"
+            )
+        except httpx.TimeoutException:
+            pytest.fail(f"Request to MCP endpoint timed out after {REQUEST_TIMEOUT}s")
+        except Exception as e:
+            pytest.fail(f"Unexpected error testing MCP endpoint: {str(e)}")
