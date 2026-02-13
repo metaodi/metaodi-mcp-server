@@ -13,6 +13,7 @@ For detailed MCP protocol testing (tools/resources), use the MCP client SDK
 or the MCP Inspector tool.
 """
 
+import json
 import os
 import httpx
 import pytest
@@ -21,6 +22,31 @@ import pytest
 SERVER_URL = os.getenv("MCP_SERVER_URL", "https://metaodi-mcp-server.fly.dev")
 # Timeout for requests (longer to account for server wake-up)
 REQUEST_TIMEOUT = 60.0
+
+
+def parse_sse_response(response_text: str) -> dict:
+    """Parse Server-Sent Events (SSE) response and extract JSON data.
+    
+    Args:
+        response_text: The SSE formatted response text
+        
+    Returns:
+        Parsed JSON data from the SSE response
+        
+    Raises:
+        ValueError: If the response is not in expected SSE format
+    """
+    if "event: message" not in response_text:
+        raise ValueError("Response is not in SSE format (missing 'event: message')")
+    
+    # Find the data line
+    data_lines = [line for line in response_text.split('\n') if line.startswith('data: ')]
+    if not data_lines:
+        raise ValueError("No 'data:' line found in SSE response")
+    
+    # Extract and parse JSON
+    data_json = data_lines[0].replace('data: ', '')
+    return json.loads(data_json)
 
 
 @pytest.mark.asyncio
@@ -151,14 +177,7 @@ async def test_mcp_endpoint_list_tools():
             assert session_id, "No mcp-session-id header in initialize response"
             
             # Parse SSE response
-            response_text = response.text
-            assert "event: message" in response_text, "Expected SSE format in response"
-            
-            # Extract the data from SSE format
-            data_line = [line for line in response_text.split('\n') if line.startswith('data: ')][0]
-            data_json = data_line.replace('data: ', '')
-            import json
-            init_data = json.loads(data_json)
+            init_data = parse_sse_response(response.text)
             
             assert "result" in init_data, "Initialize response missing 'result'"
             result = init_data["result"]
@@ -193,10 +212,7 @@ async def test_mcp_endpoint_list_tools():
             )
             
             # Parse SSE response
-            response_text = response.text
-            data_line = [line for line in response_text.split('\n') if line.startswith('data: ')][0]
-            data_json = data_line.replace('data: ', '')
-            tools_data = json.loads(data_json)
+            tools_data = parse_sse_response(response.text)
             
             assert "result" in tools_data, "tools/list response missing 'result'"
             result = tools_data["result"]
