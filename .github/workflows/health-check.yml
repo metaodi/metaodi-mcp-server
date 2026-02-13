@@ -48,7 +48,7 @@ jobs:
       - name: Run health check tests
         id: health_check
         env:
-          MCP_SERVER_URL: https://metaodi-mcp-server.fly.dev
+          MCP_SERVER_URL: https://mcp.metaodi.ch
         run: |
           uv run pytest tests/test_health_check.py -v --tb=short
       
