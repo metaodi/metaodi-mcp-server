@@ -66,17 +66,17 @@ Python SDK: https://github.com/modelcontextprotocol/python-sdk
 uv run mcp
 ```
 
-Run OpenERZ:
+Run the MCP server:
 
 ```
-uv run mcp run openerz.py
+uv run mcp run app.py
 ```
 
 
 MCP Inspector:
 
 ```
-npx -y @modelcontextprotocol/inspector uv run mcp run openerz.py
+npx -y @modelcontextprotocol/inspector uv run mcp run app.py
 ```
 
 ## Health Check
