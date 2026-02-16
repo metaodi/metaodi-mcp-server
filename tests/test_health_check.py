@@ -61,9 +61,7 @@ async def test_server_is_responding():
             # Try multiple endpoints that the server might respond to
             endpoints_to_try = [
                 "/",
-                "/sse",
-                "/health",
-                "/status"
+                "/mcp",
             ]
             
             response = None
@@ -94,7 +92,7 @@ async def test_server_is_responding():
             
             print(f"\n✅ Server is responding at {SERVER_URL}{successful_endpoint}")
             print(f"✅ Status code: {response.status_code}")
-            print(f"✅ Server is alive and reachable!")
+            print("✅ Server is alive and reachable!")
             
         except httpx.ConnectError as e:
             pytest.fail(
