@@ -8,9 +8,9 @@ on:
       - completed
   # Allow manual trigger
   workflow_dispatch:
-  # Run on schedule (every 6 hours)
+  # Run on schedule (every day at 12:00)
   schedule:
-    - cron: '0 */6 * * *'
+    - cron: '0 12 * * *'
 
 jobs:
   health-check:
